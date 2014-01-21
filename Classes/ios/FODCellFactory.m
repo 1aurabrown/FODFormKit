@@ -36,13 +36,13 @@
     if (self) {
         _tableView = tableView;
         _formViewController = formViewController;
-        [_tableView registerNib:[self nibForCell:@"SwitchCell"] forCellReuseIdentifier:self.reuseIdentifierForFODBooleanRow];
-        [_tableView registerNib:[self nibForCell:@"ExpandingSubformCell"] forCellReuseIdentifier:self.reuseIdentifierForFODExpandingSubform];
-        [_tableView registerNib:[self nibForCell:@"InlineDatePickerCell"] forCellReuseIdentifier:self.reuseIdentifierForFODInlineDatePicker];
-        [_tableView registerNib:[self nibForCell:@"InlinePickerCell"] forCellReuseIdentifier:self.reuseIdentifierForFODInlinePicker];
-        [_tableView registerClass:self.classForSubformCell forCellReuseIdentifier:self.reuseIdentifierForFODForm];
-        [_tableView registerClass:self.classForDatePickerCell forCellReuseIdentifier:self.reuseIdentifierForFODDateSelectionRow];
-        [_tableView registerClass:self.classForPickerCell forCellReuseIdentifier:self.reuseIdentifierForFODSelectionRow];
+        [_tableView registerNib:[self nibForCell:@"SwitchCell"] forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODBooleanRow"]];
+        [_tableView registerNib:[self nibForCell:@"ExpandingSubformCell"] forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODExpandingSubform"]];
+        [_tableView registerNib:[self nibForCell:@"InlineDatePickerCell"] forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODInlineDatePicker"]];
+        [_tableView registerNib:[self nibForCell:@"InlinePickerCell"] forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODInlinePicker"]];
+        [_tableView registerClass:self.classForSubformCell forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODForm"]];
+        [_tableView registerClass:self.classForDatePickerCell forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODDateSelectionRow"]];
+        [_tableView registerClass:self.classForPickerCell forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODSelectionRow"]];
     }
     return self;
 }
@@ -73,31 +73,27 @@
     else if ([row isKindOfClass:[FODForm class]]) {
         FODForm *form = (FODForm*)row;
         if (form.displayInline) {
-            return self.reuseIdentifierForFODExpandingSubform;
+            return [self reuseIdentifierForCell:@"FODExpandingSubform"];
         } else {
-            return self.reuseIdentifierForFODForm;
+            return [self reuseIdentifierForCell:@"FODForm"];
         }
     }
     else if ([row isKindOfClass:[FODDateSelectionRow class]]) {
         if (row.displayInline) {
-            return self.reuseIdentifierForFODInlineDatePicker;
+            return [self reuseIdentifierForCell:@"FODInlineDatePicker" ];
         } else {
-            return self.reuseIdentifierForFODDateSelectionRow;
+            return [self reuseIdentifierForCell:@"FODDateSelectionRow"];
         }
     }
     else if ([row isKindOfClass:[FODSelectionRow class]]) {
         if (row.displayInline) {
-            return self.reuseIdentifierForFODInlinePicker;
+            return [self reuseIdentifierForCell:@"FODInlinePicker"];
         } else {
-            return self.reuseIdentifierForFODSelectionRow;
+            return [self reuseIdentifierForCell:@"FODSelectionRow"];
         }
     }
     else {
-        NSString *className = NSStringFromClass([row class]);
-        SEL selector = NSSelectorFromString([NSString stringWithFormat:@"reuseIdentifierFor%@", className]);
-        IMP imp = [self methodForSelector:selector];
-        NSString* (*func)(id, SEL) = (void *)imp;
-        return func(self,selector);
+        return [self reuseIdentifierForCell:NSStringFromClass([row class])];
     }
 }
 
@@ -117,15 +113,16 @@
 
 - (UINib*) nibForCell:(NSString *) cell {
     NSMutableDictionary *nibMap = [NSMutableDictionary dictionaryWithDictionary: @{
-                                          @"ExpandingSubformCell"   : @"FODExpandingSubformCell",
-                                          @"InlineDatePickerCell"   : @"FODInlineDatePickerCell",
-                                          @"InlinePickerCell"       : @"FODInlineDatePickerCell",
-                                          @"TextInputCellNoTitle"   : @"FODTextInputCell",
-                                          @"TextInputCellWithTitle" : @"FODTextInputCell2",
-                                          @"SwitchCell"             : @"FODSwitchCell"
-                                          }];
+                                   @"ExpandingSubformCell"   : @"FODExpandingSubformCell",
+                                   @"InlineDatePickerCell"   : @"FODInlineDatePickerCell",
+                                   @"InlinePickerCell"       : @"FODInlineDatePickerCell",
+                                   @"TextInputCellNoTitle"   : @"FODTextInputCell",
+                                   @"TextInputCellWithTitle" : @"FODTextInputCell2",
+                                   @"SwitchCell"             : @"FODSwitchCell"
+                                   }];
     [nibMap addEntriesFromDictionary:[self cellToNibMap]];
-    return [UINib nibWithNibName: nibMap[cell] bundle:nil];
+    NSString *nibName = nibMap[cell];
+    return [UINib nibWithNibName: nibName  bundle:nil];
 }
 
 - (NSDictionary*) cellToNibMap {
@@ -134,32 +131,22 @@
 
 #pragma  mark reuse identifiers
 
-- (NSString *)reuseIdentifierForFODSelectionRow {
-    return @"FODPickerCell";
+- (NSString*) reuseIdentifierForCell:(NSString *) cell {
+    NSMutableDictionary *identifiersMap = [NSMutableDictionary dictionaryWithDictionary: @{
+                                           @"FODSelectionRow"     : @"FODPickerCell",
+                                           @"FODDateSelectionRow" : @"FODDatePickerCell",
+                                           @"FODForm"             : @"FODFormCell",
+                                           @"FODExpandingSubform" : @"FODExpandingSubformCell",
+                                           @"FODInlineDatePicker" : @"FODInlineDatePickerCell",
+                                           @"FODInlinePicker"     : @"FODInlinePickerCell",
+                                           @"FODBooleanRow"       : @"FODSwitchCell"
+                                           }];
+    [identifiersMap addEntriesFromDictionary:[self cellToReuseIdentifiersMap]];
+    return identifiersMap[cell];
 }
 
-- (NSString *)reuseIdentifierForFODDateSelectionRow {
-    return @"FODDatePickerCell";
-}
-
-- (NSString*)reuseIdentifierForFODForm {
-    return @"FODFormCell";
-}
-
-- (NSString*)reuseIdentifierForFODExpandingSubform {
-    return @"FODExpandingSubformCell";
-}
-
-- (NSString*)reuseIdentifierForFODInlineDatePicker {
-    return @"FODInlineDatePickerCell";
-}
-
-- (NSString*)reuseIdentifierForFODInlinePicker {
-    return @"FODInlinePickerCell";
-}
-
-- (NSString *)reuseIdentifierForFODBooleanRow {
-    return @"FODSwitchCell";
+- (NSDictionary*) cellToReuseIdentifiersMap {
+    return @{};
 }
 
 - (NSString*)reuseIdentifierForTextInputRowWithoutTitle:(FODFormRow*)row {
