@@ -36,10 +36,10 @@
     if (self) {
         _tableView = tableView;
         _formViewController = formViewController;
-        [_tableView registerNib:self.nibForSwitchCell forCellReuseIdentifier:self.reuseIdentifierForFODBooleanRow];
-        [_tableView registerNib:self.nibForExpandingSubformCell forCellReuseIdentifier:self.reuseIdentifierForFODExpandingSubform];
-        [_tableView registerNib:self.nibForInlineDatePickerCell forCellReuseIdentifier:self.reuseIdentifierForFODInlineDatePicker];
-        [_tableView registerNib:self.nibForInlinePickerCell forCellReuseIdentifier:self.reuseIdentifierForFODInlinePicker];
+        [_tableView registerNib:[self nibForCell:@"SwitchCell"] forCellReuseIdentifier:self.reuseIdentifierForFODBooleanRow];
+        [_tableView registerNib:[self nibForCell:@"ExpandingSubformCell"] forCellReuseIdentifier:self.reuseIdentifierForFODExpandingSubform];
+        [_tableView registerNib:[self nibForCell:@"InlineDatePickerCell"] forCellReuseIdentifier:self.reuseIdentifierForFODInlineDatePicker];
+        [_tableView registerNib:[self nibForCell:@"InlinePickerCell"] forCellReuseIdentifier:self.reuseIdentifierForFODInlinePicker];
         [_tableView registerClass:self.classForSubformCell forCellReuseIdentifier:self.reuseIdentifierForFODForm];
         [_tableView registerClass:self.classForDatePickerCell forCellReuseIdentifier:self.reuseIdentifierForFODDateSelectionRow];
         [_tableView registerClass:self.classForPickerCell forCellReuseIdentifier:self.reuseIdentifierForFODSelectionRow];
@@ -62,11 +62,11 @@
     if ([row isKindOfClass:[FODTextInputRow class]]) {
         if (row.title) {
             NSString *reuseIdentifier = [self reuseIdentifierForTextInputRowWithTitle:row];
-            [_tableView registerNib:self.nibForTextInputCellWithTitle forCellReuseIdentifier:reuseIdentifier];
+            [_tableView registerNib:[self nibForCell:@"TextInputCellWithTitle"] forCellReuseIdentifier:reuseIdentifier];
             return reuseIdentifier;
         } else {
             NSString *reuseIdentifier = [self reuseIdentifierForTextInputRowWithoutTitle:row];
-            [_tableView registerNib:self.nibForTextInputCellNoTitle forCellReuseIdentifier:reuseIdentifier];
+            [_tableView registerNib:[self nibForCell:@"TextInputCellNoTitle"] forCellReuseIdentifier:reuseIdentifier];
             return reuseIdentifier;
         }
     }
@@ -115,28 +115,21 @@
     return [FODPickerCell class];
 }
 
-- (UINib*) nibForExpandingSubformCell {
-    return [UINib nibWithNibName:@"FODExpandingSubformCell" bundle:nil];
+- (UINib*) nibForCell:(NSString *) cell {
+    NSMutableDictionary *nibMap = [NSMutableDictionary dictionaryWithDictionary: @{
+                                          @"ExpandingSubformCell"   : @"FODExpandingSubformCell",
+                                          @"InlineDatePickerCell"   : @"FODInlineDatePickerCell",
+                                          @"InlinePickerCell"       : @"FODInlineDatePickerCell",
+                                          @"TextInputCellNoTitle"   : @"FODTextInputCell",
+                                          @"TextInputCellWithTitle" : @"FODTextInputCell2",
+                                          @"SwitchCell"             : @"FODSwitchCell"
+                                          }];
+    [nibMap addEntriesFromDictionary:[self cellToNibMap]];
+    return [UINib nibWithNibName: nibMap[cell] bundle:nil];
 }
 
-- (UINib*) nibForInlineDatePickerCell {
-    return [UINib nibWithNibName:@"FODInlineDatePickerCell" bundle:nil];
-}
-
-- (UINib*) nibForInlinePickerCell {
-    return [UINib nibWithNibName:@"FODInlinePickerCell" bundle:nil];
-}
-
-- (UINib*) nibForTextInputCellNoTitle {
-    return [UINib nibWithNibName:@"FODTextInputCell" bundle:nil];
-}
-
-- (UINib*) nibForTextInputCellWithTitle {
-    return [UINib nibWithNibName:@"FODTextInputCell2" bundle:nil];
-}
-
-- (UINib*) nibForSwitchCell {
-    return [UINib nibWithNibName:@"FODSwitchCell" bundle:nil];
+- (NSDictionary*) cellToNibMap {
+    return @{};
 }
 
 #pragma  mark reuse identifiers
