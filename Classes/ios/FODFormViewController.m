@@ -29,6 +29,9 @@
 @property (nonatomic, readonly) UITextField *currentlyEditingField;
 @property (nonatomic, strong) NSMutableDictionary *textFields;
 @property (nonatomic, strong) NSMutableDictionary *rowHeights;
+@property (nonatomic) BOOL keyboardIsComingUp;
+@property (nonatomic) CGFloat keyboardHeight;
+@property (nonatomic) Class classForFactory;
 @end
 
 @implementation UIView(FOD)
@@ -62,19 +65,10 @@
 
 @end
 
-
-@interface FODFormViewController()
-
-@property (nonatomic) BOOL keyboardIsComingUp;
-@property (nonatomic) CGFloat keyboardHeight;
-
-@end
-
-
 @implementation FODFormViewController
 
 - (id)initWithForm:(FODForm*)form
-           userInfo:(id)userInfo
+          userInfo:(id)userInfo
 {
     self = [super init];
     if (self) {
@@ -85,18 +79,18 @@
     return self;
 }
 
+- (Class)classForFactory
+{
+    if (!_classForFactory) _classForFactory = [FODCellFactory class];
+    return _classForFactory;
+}
+
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     self.tableView.delegate = nil;
     self.tableView.dataSource = nil;
 }
-
-- (Class)classForFactory
-{
-    return [FODCellFactory class];
-}
-
 
 - (void)viewDidLoad
 {
