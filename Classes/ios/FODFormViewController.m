@@ -31,7 +31,7 @@
 @property (nonatomic, strong) NSMutableDictionary *rowHeights;
 @property (nonatomic) BOOL keyboardIsComingUp;
 @property (nonatomic) CGFloat keyboardHeight;
-@property (nonatomic) Class classForFactory;
+
 @end
 
 @implementation UIView(FOD)
@@ -79,12 +79,6 @@
     return self;
 }
 
-- (Class)classForFactory
-{
-    if (!_classForFactory) _classForFactory = [FODCellFactory class];
-    return _classForFactory;
-}
-
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -97,14 +91,22 @@
     [super viewDidLoad];
     [self createSaveAndCancelButtons];
     [self createTableView];
-    self.cellFactory = [[[self classForFactory] alloc] initWithTableView:self.tableView
-                                                   andFormViewController:self];
+
+    self.cellFactory = self.cellFactory ? self.cellFactory : [[FODCellFactory alloc] init];
     [self.view addSubview:self.tableView];
 
     // create a toolbar to go above the textfield keyboard with previous/next navigators.
     [self createNavigationToolbar];
 
     self.textFields = [NSMutableDictionary dictionary];
+}
+
+
+- (void)setCellFactory:(FODCellFactory *)cellFactory
+{
+    _cellFactory = cellFactory;
+    _cellFactory.tableView = self.tableView;
+    _cellFactory.formViewController = self;
 }
 
 - (void)viewDidAppear:(BOOL)animated {

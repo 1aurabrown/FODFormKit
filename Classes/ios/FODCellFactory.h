@@ -20,4 +20,7 @@
 
 + (UIColor*) editableItemColor;
 
+@property (weak, nonatomic) UITableView *tableView;
+@property (weak, nonatomic) FODFormViewController *formViewController;
+
 @end
