@@ -13,6 +13,8 @@
 
 @interface FODCellFactory : NSObject
 
+- (id) initWithOverridesDict:(NSDictionary *)overrides;
+
 - (id) initWithTableView:(UITableView*)tableView
    andFormViewController:(FODFormViewController*)parentViewController;
 

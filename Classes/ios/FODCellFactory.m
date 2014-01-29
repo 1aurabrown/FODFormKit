@@ -22,18 +22,29 @@
 
 @interface FODCellFactory()
 
+@property (nonatomic, strong) NSMutableDictionary *cellToNibMap;
+
 @end
 
 
 @implementation FODCellFactory
 
-- (id) initWithTableView:(UITableView*)tableView andFormViewController:(FODFormViewController *)formViewController
+- (id) initWithOverridesDict:(NSDictionary *)overrides
+{
+    return [self initWithTableView:nil formViewController:nil overrides:overrides];
+}
+
+- (id) initWithTableView:(UITableView*)tableView formViewController:(FODFormViewController *)formViewController overrides:(NSDictionary *)overrides
 {
     self = [super init];
     if (self) {
+        NSMutableDictionary *nibMap = [[self class] cellToNibMapDefaults];
+        [nibMap addEntriesFromDictionary:overrides];
+        _cellToNibMap = nibMap;
+        
         _formViewController = formViewController;
         self.tableView = tableView;
-    
+        
     }
     return self;
 }
@@ -116,19 +127,21 @@
 }
 
 - (UINib*) nibForCell:(NSString *) cell {
-    NSString *nibName = [[self class] cellToNibMap][cell];
+    NSString *nibName = self.cellToNibMap[cell];
+    if (!nibName) return nil;
     return [UINib nibWithNibName: nibName  bundle:nil];
 }
 
-+ (NSDictionary*) cellToNibMap {
-    return @{
-             @"ExpandingSubformCell"   : @"FODExpandingSubformCell",
-             @"InlineDatePickerCell"   : @"FODInlineDatePickerCell",
-             @"InlinePickerCell"       : @"FODInlineDatePickerCell",
-             @"TextInputCellNoTitle"   : @"FODTextInputCell",
-             @"TextInputCellWithTitle" : @"FODTextInputCell2",
-             @"SwitchCell"             : @"FODSwitchCell"
-             };
++ (NSMutableDictionary*) cellToNibMapDefaults {
+    return [@{
+        @"ExpandingSubformCell"   : @"FODExpandingSubformCell",
+        @"InlineDatePickerCell"   : @"FODInlineDatePickerCell",
+        @"InlinePickerCell"       : @"FODInlineDatePickerCell",
+        @"TextInputCellNoTitle"   : @"FODTextInputCell",
+        @"TextInputCellWithTitle" : @"FODTextInputCell2",
+        @"SwitchCell"             : @"FODSwitchCell"
+        
+    } mutableCopy];
 }
 
 #pragma  mark reuse identifiers
