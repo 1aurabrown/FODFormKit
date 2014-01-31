@@ -21,32 +21,45 @@
 #import "FODExpandingSubformCell.h"
 
 @interface FODCellFactory()
-@property (weak, nonatomic) UITableView *tableView;
-@property (weak, nonatomic) FODFormViewController *formViewController;
+
+@property (nonatomic, strong) NSMutableDictionary *cellToNibMap;
+
 @end
 
 
 @implementation FODCellFactory
 
-- (id) initWithTableView:(UITableView*)tableView andFormViewController:(FODFormViewController *)formViewController
+- (id) initWithOverridesDict:(NSDictionary *)overrides
+{
+    return [self initWithTableView:nil formViewController:nil overrides:overrides];
+}
+
+- (id) initWithTableView:(UITableView*)tableView formViewController:(FODFormViewController *)formViewController overrides:(NSDictionary *)overrides
 {
     self = [super init];
     if (self) {
-        _tableView = tableView;
+        NSMutableDictionary *nibMap = [[self class] cellToNibMapDefaults];
+        [nibMap addEntriesFromDictionary:overrides];
+        _cellToNibMap = nibMap;
+        
         _formViewController = formViewController;
-        [self registerReuseIdentifiersForTableView:_tableView];
+        self.tableView = tableView;
+        
     }
     return self;
 }
 
-- (void) registerReuseIdentifiersForTableView:(UITableView*)tableView {
-    [tableView registerNib:self.nibForSwitchCell forCellReuseIdentifier:self.reuseIdentifierForFODBooleanRow];
-    [tableView registerNib:self.nibForExpandingSubformCell forCellReuseIdentifier:self.reuseIdentifierForFODExpandingSubform];
-    [tableView registerNib:self.nibForInlineDatePickerCell forCellReuseIdentifier:self.reuseIdentifierForFODInlineDatePicker];
-    [tableView registerNib:self.nibForInlinePickerCell forCellReuseIdentifier:self.reuseIdentifierForFODInlinePicker];
-    [tableView registerClass:self.classForSubformCell forCellReuseIdentifier:self.reuseIdentifierForFODForm];
-    [tableView registerClass:self.classForDatePickerCell forCellReuseIdentifier:self.reuseIdentifierForFODDateSelectionRow];
-    [tableView registerClass:self.classForPickerCell forCellReuseIdentifier:self.reuseIdentifierForFODSelectionRow];
+- (void)setTableView:(UITableView *)tableView
+{
+    _tableView = tableView;
+    
+    [_tableView registerNib:[self nibForCell:@"SwitchCell"] forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODBooleanRow"]];
+    [_tableView registerNib:[self nibForCell:@"ExpandingSubformCell"] forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODExpandingSubform"]];
+    [_tableView registerNib:[self nibForCell:@"InlineDatePickerCell"] forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODInlineDatePicker"]];
+    [_tableView registerNib:[self nibForCell:@"InlinePickerCell"] forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODInlinePicker"]];
+    [_tableView registerClass:self.classForSubformCell forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODForm"]];
+    [_tableView registerClass:self.classForDatePickerCell forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODDateSelectionRow"]];
+    [_tableView registerClass:self.classForPickerCell forCellReuseIdentifier:[self reuseIdentifierForCell:@"FODSelectionRow"]];
 }
 
 + (UIColor*) editableItemColor {
@@ -64,42 +77,38 @@
     if ([row isKindOfClass:[FODTextInputRow class]]) {
         if (row.title) {
             NSString *reuseIdentifier = [self reuseIdentifierForTextInputRowWithTitle:row];
-            [_tableView registerNib:self.nibForTextInputCellWithTitle forCellReuseIdentifier:reuseIdentifier];
+            [_tableView registerNib:[self nibForCell:@"TextInputCellWithTitle"] forCellReuseIdentifier:reuseIdentifier];
             return reuseIdentifier;
         } else {
             NSString *reuseIdentifier = [self reuseIdentifierForTextInputRowWithoutTitle:row];
-            [_tableView registerNib:self.nibForTextInputCellNoTitle forCellReuseIdentifier:reuseIdentifier];
+            [_tableView registerNib:[self nibForCell:@"TextInputCellNoTitle"] forCellReuseIdentifier:reuseIdentifier];
             return reuseIdentifier;
         }
     }
     else if ([row isKindOfClass:[FODForm class]]) {
         FODForm *form = (FODForm*)row;
         if (form.displayInline) {
-            return self.reuseIdentifierForFODExpandingSubform;
+            return [self reuseIdentifierForCell:@"FODExpandingSubform"];
         } else {
-            return self.reuseIdentifierForFODForm;
+            return [self reuseIdentifierForCell:@"FODForm"];
         }
     }
     else if ([row isKindOfClass:[FODDateSelectionRow class]]) {
         if (row.displayInline) {
-            return self.reuseIdentifierForFODInlineDatePicker;
+            return [self reuseIdentifierForCell:@"FODInlineDatePicker" ];
         } else {
-            return self.reuseIdentifierForFODDateSelectionRow;
+            return [self reuseIdentifierForCell:@"FODDateSelectionRow"];
         }
     }
     else if ([row isKindOfClass:[FODSelectionRow class]]) {
         if (row.displayInline) {
-            return self.reuseIdentifierForFODInlinePicker;
+            return [self reuseIdentifierForCell:@"FODInlinePicker"];
         } else {
-            return self.reuseIdentifierForFODSelectionRow;
+            return [self reuseIdentifierForCell:@"FODSelectionRow"];
         }
     }
     else {
-        NSString *className = NSStringFromClass([row class]);
-        SEL selector = NSSelectorFromString([NSString stringWithFormat:@"reuseIdentifierFor%@", className]);
-        IMP imp = [self methodForSelector:selector];
-        NSString* (*func)(id, SEL) = (void *)imp;
-        return func(self,selector);
+        return [self reuseIdentifierForCell:NSStringFromClass([row class])];
     }
 }
 
@@ -117,58 +126,40 @@
     return [FODPickerCell class];
 }
 
-- (UINib*) nibForExpandingSubformCell {
-    return [UINib nibWithNibName:@"FODExpandingSubformCell" bundle:nil];
+- (UINib*) nibForCell:(NSString *) cell {
+    NSString *nibName = self.cellToNibMap[cell];
+    if (!nibName) return nil;
+    return [UINib nibWithNibName: nibName  bundle:nil];
 }
 
-- (UINib*) nibForInlineDatePickerCell {
-    return [UINib nibWithNibName:@"FODInlineDatePickerCell" bundle:nil];
-}
-
-- (UINib*) nibForInlinePickerCell {
-    return [UINib nibWithNibName:@"FODInlinePickerCell" bundle:nil];
-}
-
-- (UINib*) nibForTextInputCellNoTitle {
-    return [UINib nibWithNibName:@"FODTextInputCell" bundle:nil];
-}
-
-- (UINib*) nibForTextInputCellWithTitle {
-    return [UINib nibWithNibName:@"FODTextInputCell2" bundle:nil];
-}
-
-- (UINib*) nibForSwitchCell {
-    return [UINib nibWithNibName:@"FODSwitchCell" bundle:nil];
++ (NSMutableDictionary*) cellToNibMapDefaults {
+    return [@{
+        @"ExpandingSubformCell"   : @"FODExpandingSubformCell",
+        @"InlineDatePickerCell"   : @"FODInlineDatePickerCell",
+        @"InlinePickerCell"       : @"FODInlineDatePickerCell",
+        @"TextInputCellNoTitle"   : @"FODTextInputCell",
+        @"TextInputCellWithTitle" : @"FODTextInputCell2",
+        @"SwitchCell"             : @"FODSwitchCell"
+        
+    } mutableCopy];
 }
 
 #pragma  mark reuse identifiers
 
-- (NSString *)reuseIdentifierForFODSelectionRow {
-    return @"FODPickerCell";
+- (NSString*) reuseIdentifierForCell:(NSString *) cell {
+    return [[self class] cellToReuseIdentifierMap][cell];
 }
 
-- (NSString *)reuseIdentifierForFODDateSelectionRow {
-    return @"FODDatePickerCell";
-}
-
-- (NSString*)reuseIdentifierForFODForm {
-    return @"FODFormCell";
-}
-
-- (NSString*)reuseIdentifierForFODExpandingSubform {
-    return @"FODExpandingSubformCell";
-}
-
-- (NSString*)reuseIdentifierForFODInlineDatePicker {
-    return @"FODInlineDatePickerCell";
-}
-
-- (NSString*)reuseIdentifierForFODInlinePicker {
-    return @"FODInlinePickerCell";
-}
-
-- (NSString *)reuseIdentifierForFODBooleanRow {
-    return @"FODSwitchCell";
++ (NSDictionary*) cellToReuseIdentifierMap {
+    return @{
+             @"FODSelectionRow"     : @"FODPickerCell",
+             @"FODDateSelectionRow" : @"FODDatePickerCell",
+             @"FODForm"             : @"FODFormCell",
+             @"FODExpandingSubform" : @"FODExpandingSubformCell",
+             @"FODInlineDatePicker" : @"FODInlineDatePickerCell",
+             @"FODInlinePicker"     : @"FODInlinePickerCell",
+             @"FODBooleanRow"       : @"FODSwitchCell"
+             };
 }
 
 - (NSString*)reuseIdentifierForTextInputRowWithoutTitle:(FODFormRow*)row {

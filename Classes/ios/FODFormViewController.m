@@ -29,6 +29,9 @@
 @property (nonatomic, readonly) UITextField *currentlyEditingField;
 @property (nonatomic, strong) NSMutableDictionary *textFields;
 @property (nonatomic, strong) NSMutableDictionary *rowHeights;
+@property (nonatomic) BOOL keyboardIsComingUp;
+@property (nonatomic) CGFloat keyboardHeight;
+
 @end
 
 @implementation UIView(FOD)
@@ -62,19 +65,10 @@
 
 @end
 
-
-@interface FODFormViewController()
-
-@property (nonatomic) BOOL keyboardIsComingUp;
-@property (nonatomic) CGFloat keyboardHeight;
-
-@end
-
-
 @implementation FODFormViewController
 
 - (id)initWithForm:(FODForm*)form
-           userInfo:(id)userInfo
+          userInfo:(id)userInfo
 {
     self = [super init];
     if (self) {
@@ -95,40 +89,27 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    [self createSaveAndCancelButtons];
+    [self createTableView];
 
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Save", @"Button label")
-                                                                              style:UIBarButtonItemStyleDone
-                                                                             target:self
-                                                                             action:@selector(savePressed:)];
-
-    if (!self.form.parentForm) {
-        self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
-                                                 initWithTitle:NSLocalizedString(@"Cancel", @"Button label")
-                                                 style:UIBarButtonItemStyleBordered
-                                                 target:self
-                                                 action:@selector(cancelPressed:)];
-    }
-
-    self.tableView = [[UITableView alloc] initWithFrame:self.view.frame style:UITableViewStyleGrouped];
-    self.tableView.dataSource = self;
-    self.tableView.delegate = self;
-    self.tableView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-    self.cellFactory = [[FODCellFactory alloc] initWithTableView:self.tableView
-                                           andFormViewController:self];
+    self.cellFactory = self.cellFactory ? self.cellFactory : [[FODCellFactory alloc] init];
     [self.view addSubview:self.tableView];
-    
+
     // create a toolbar to go above the textfield keyboard with previous/next navigators.
-    self.toolbar= [[UIToolbar alloc] init];
-    [self.toolbar sizeToFit];
-    self.prevButton = [[UIBarButtonItem alloc] initWithTitle:@"Previous" style:UIBarButtonItemStylePlain target:self action:@selector(moveToPrevField:)];
-    self.nextButton = [[UIBarButtonItem alloc] initWithTitle:@"Next" style:UIBarButtonItemStylePlain target:self action:@selector(moveToNextField:)];
-    UIBarButtonItem *flexButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
-    [self.toolbar setItems:@[flexButton, self.prevButton, self.nextButton]];
+    [self createNavigationToolbar];
 
     self.textFields = [NSMutableDictionary dictionary];
 }
 
-- (void) viewDidAppear:(BOOL)animated {
+
+- (void)setCellFactory:(FODCellFactory *)cellFactory
+{
+    _cellFactory = cellFactory;
+    _cellFactory.tableView = self.tableView;
+    _cellFactory.formViewController = self;
+}
+
+- (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -153,6 +134,37 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillShowNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardDidShowNotification object:nil];
+}
+
+- (void) createNavigationToolbar {
+    self.toolbar = [[UIToolbar alloc] init];
+    [self.toolbar sizeToFit];
+    self.prevButton = [[UIBarButtonItem alloc] initWithTitle:@"Previous" style:UIBarButtonItemStylePlain target:self action:@selector(moveToPrevField:)];
+    self.nextButton = [[UIBarButtonItem alloc] initWithTitle:@"Next" style:UIBarButtonItemStylePlain target:self action:@selector(moveToNextField:)];
+    UIBarButtonItem *flexButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
+    [self.toolbar setItems:@[flexButton, self.prevButton, self.nextButton]];
+}
+
+- (void) createSaveAndCancelButtons {
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Save", @"Button label")
+                                                                              style:UIBarButtonItemStyleDone
+                                                                             target:self
+                                                                             action:@selector(savePressed:)];
+
+    if (!self.form.parentForm) {
+        self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
+                                                 initWithTitle:NSLocalizedString(@"Cancel", @"Button label")
+                                                 style:UIBarButtonItemStyleBordered
+                                                 target:self
+                                                 action:@selector(cancelPressed:)];
+    }
+}
+
+- (void) createTableView {
+    self.tableView = [[UITableView alloc] initWithFrame:self.view.frame style:UITableViewStyleGrouped];
+    self.tableView.dataSource = self;
+    self.tableView.delegate = self;
+    self.tableView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
 }
 
 - (void)setForm:(FODForm *)form {

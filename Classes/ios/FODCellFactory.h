@@ -13,6 +13,8 @@
 
 @interface FODCellFactory : NSObject
 
+- (id) initWithOverridesDict:(NSDictionary *)overrides;
+
 - (id) initWithTableView:(UITableView*)tableView
    andFormViewController:(FODFormViewController*)parentViewController;
 
@@ -20,8 +22,7 @@
 
 + (UIColor*) editableItemColor;
 
-- (void) registerReuseIdentifiersForTableView:(UITableView*)tableView;
-
-- (NSString*)reuseIdentifierForRow:(FODFormRow*)row;
+@property (weak, nonatomic) UITableView *tableView;
+@property (weak, nonatomic) FODFormViewController *formViewController;
 
 @end
